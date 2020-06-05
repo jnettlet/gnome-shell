@@ -400,6 +400,7 @@ class WorkspacesDisplay extends St.Widget {
             this._syncWorkspacesActualGeometry();
         });
 
+        this._primaryVisible = true;
         this._primaryIndex = Main.layoutManager.primaryIndex;
         this._workspacesViews = [];
 
@@ -562,6 +563,18 @@ class WorkspacesDisplay extends St.Widget {
         return this._getPrimaryView().navigate_focus(from, direction, false);
     }
 
+    setPrimaryWorkspaceVisible(visible) {
+        if (this._primaryVisible === visible)
+            return;
+
+        this._primaryVisible = visible;
+
+        const primaryIndex = Main.layoutManager.primaryIndex;
+        const primaryWorkspace = this._workspacesViews[primaryIndex];
+        if (primaryWorkspace)
+            primaryWorkspace.visible = visible;
+    }
+
     animateToOverview(fadeOnPrimary) {
         this.show();
         this._updateWorkspacesViews();
@@ -659,6 +672,8 @@ class WorkspacesDisplay extends St.Widget {
             this._workspacesViews.push(view);
             Main.layoutManager.overviewGroup.add_actor(view);
         }
+
+        this._workspacesViews[this._primaryIndex].visible = this._primaryVisible;
     }
 
     _getMonitorIndexForEvent(event) {

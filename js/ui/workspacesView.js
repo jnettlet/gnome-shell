@@ -536,7 +536,6 @@ class WorkspacesDisplay extends St.Widget {
 
         this._gestureActive = false; // touch(pad) gestures
         this._canScroll = true; // limiting scrolling speed
-        this._animating = false;
 
         this.connect('destroy', this._onDestroy.bind(this));
     }
@@ -730,25 +729,11 @@ class WorkspacesDisplay extends St.Widget {
     }
 
     animateFromOverview() {
-        this._animating = true;
-
         for (let i = 0; i < this._workspacesViews.length; i++)
             this._workspacesViews[i].animateFromOverview();
-
-        const { primaryIndex } = Main.layoutManager;
-        const { x, y, width, height } =
-            Main.layoutManager.getWorkAreaForMonitor(primaryIndex);
-        this._getPrimaryView().ease({
-            x, y, width, height,
-            duration: ANIMATION_TIME,
-            mode: Clutter.AnimationMode.EASE_OUT_QUAD,
-            onStopped: () => (this._animating = false),
-        });
     }
 
     vfunc_hide() {
-        this._animating = false;
-
         if (this._restackedNotifyId > 0) {
             Main.overview.disconnect(this._restackedNotifyId);
             this._restackedNotifyId = 0;
@@ -779,8 +764,6 @@ class WorkspacesDisplay extends St.Widget {
     }
 
     _updateWorkspacesViews() {
-        this._animating = false;
-
         for (let i = 0; i < this._workspacesViews.length; i++)
             this._workspacesViews[i].destroy();
 
@@ -857,9 +840,6 @@ class WorkspacesDisplay extends St.Widget {
 
         this._syncActualGeometryLater =
             Meta.later_add(Meta.LaterType.BEFORE_REDRAW, () => {
-                if (this._animating)
-                    return GLib.SOURCE_CONTINUE;
-
                 this._syncWorkspacesActualGeometry();
 
                 this._syncActualGeometryLater = 0;

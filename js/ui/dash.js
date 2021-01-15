@@ -348,6 +348,7 @@ var Dash = GObject.registerClass({
 }, class Dash extends St.Bin {
     _init() {
         this._maxWidth = -1;
+        this._maxHeight = -1;
         this.iconSize = 64;
         this._shownInitially = false;
 
@@ -378,6 +379,11 @@ var Dash = GObject.registerClass({
             if (this._maxWidth !== this.width)
                 this._queueRedisplay();
             this._maxWidth = this.width;
+        });
+        this._container.connect('notify::height', () => {
+            if (this._maxHeight !== this._container.height)
+                this._queueRedisplay();
+            this._maxHeight = this._container.height;
         });
 
         this._workId = Main.initializeDeferredWork(this._box, this._redisplay.bind(this));
@@ -576,7 +582,7 @@ var Dash = GObject.registerClass({
 
         iconChildren.push(this._showAppsIcon);
 
-        if (this._maxWidth === -1)
+        if (this._maxWidth === -1 || this._maxHeight === -1)
             return;
 
         let themeNode = this._container.get_theme_node();
@@ -584,10 +590,10 @@ var Dash = GObject.registerClass({
             x1: 0,
             y1: 0,
             x2: this._maxWidth,
-            y2: 42, /* whatever */
+            y2: this._maxHeight,
         });
         let maxContent = themeNode.get_content_box(maxAllocation);
-        let availWidth = maxContent.x2 - maxContent.x1;
+        let [availWidth, availHeight] = maxContent.get_size();
         let spacing = themeNode.get_length('spacing');
 
         let firstButton = iconChildren[0].child;
@@ -602,7 +608,12 @@ var Dash = GObject.registerClass({
         availWidth -= iconChildren.length * (buttonWidth - iconWidth) +
                        (iconChildren.length - 1) * spacing;
 
-        let availSize = availWidth / iconChildren.length;
+        const [, iconHeight] = firstIcon.icon.get_preferred_height(-1);
+        const [, buttonHeight] = firstButton.get_preferred_height(-1);
+
+        availHeight -= buttonHeight - iconHeight;
+
+        const availSize = Math.min(availWidth / iconChildren.length, availHeight);
 
         let scaleFactor = St.ThemeContext.get_for_stage(global.stage).scale_factor;
         let iconSizes = baseIconSizes.map(s => s * scaleFactor);

@@ -10,7 +10,7 @@ variables:
     BUNDLE: "extensions-git.flatpak"
     JS_LOG: "js-report.txt"
 
-image: registry.gitlab.gnome.org/gnome/mutter/fedora/33:2020-11-20.1
+image: registry.gitlab.gnome.org/gnome/mutter/fedora/33:x86_64-2021-02-04.1
 
 .only_default: &only_default
     only:

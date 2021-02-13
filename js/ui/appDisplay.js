@@ -211,6 +211,31 @@ var BaseAppView = GObject.registerClass({
             y_align: Clutter.ActorAlign.FILL,
         });
 
+        // Next/prev page arrows
+        const rtl = this.get_text_direction() === Clutter.TextDirection.RTL;
+        this._nextPageArrow = new St.Icon({
+            style_class: 'page-navigation-arrow',
+            icon_name: rtl
+                ? 'carousel-arrow-back-24-symbolic'
+                : 'carousel-arrow-next-24-symbolic',
+            opacity: 0,
+            reactive: false,
+            visible: false,
+            x_expand: true,
+            x_align: Clutter.ActorAlign.END,
+        });
+        this._prevPageArrow = new St.Icon({
+            style_class: 'page-navigation-arrow',
+            icon_name: rtl
+                ? 'carousel-arrow-next-24-symbolic'
+                : 'carousel-arrow-back-24-symbolic',
+            opacity: 0,
+            reactive: false,
+            visible: false,
+            x_expand: true,
+            x_align: Clutter.ActorAlign.START,
+        });
+
         const scrollContainer = new St.Widget({
             layout_manager: new Clutter.BinLayout(),
             clip_to_allocation: true,
@@ -219,6 +244,8 @@ var BaseAppView = GObject.registerClass({
         scrollContainer.add_child(this._prevPageIndicator);
         scrollContainer.add_child(this._nextPageIndicator);
         scrollContainer.add_child(this._scrollView);
+        scrollContainer.add_child(this._nextPageArrow);
+        scrollContainer.add_child(this._prevPageArrow);
 
         this._box = new St.BoxLayout({
             vertical: true,
@@ -996,10 +1023,18 @@ var BaseAppView = GObject.registerClass({
                 opacity: pageNumber === 0 ? 0 : 255,
                 duration: PAGE_INDICATOR_FADE_TIME,
             });
+            this._prevPageArrow.ease({
+                opacity: pageNumber === 0 ? 0 : 255,
+                duration: PAGE_INDICATOR_FADE_TIME,
+            });
         }
 
         if (animate && (this._pagesShown & SidePages.NEXT) !== 0) {
             this._nextPageIndicator.ease({
+                opacity: pageNumber === this._grid.nPages - 1 ? 0 : 255,
+                duration: PAGE_INDICATOR_FADE_TIME,
+            });
+            this._nextPageArrow.ease({
                 opacity: pageNumber === this._grid.nPages - 1 ? 0 : 255,
                 duration: PAGE_INDICATOR_FADE_TIME,
             });
@@ -1063,6 +1098,17 @@ var BaseAppView = GObject.registerClass({
             if (hasFollowingPage) {
                 const items = this._grid.getItemsAtPage(nextPage);
                 items.forEach(item => (item.translation_x = translationX));
+
+                if (!(state & SidePages.DND)) {
+                    const pageArrow = page > 0
+                        ? this._nextPageArrow
+                        : this._prevPageArrow;
+                    pageArrow.set({
+                        visible: true,
+                        opacity: adjustment.value * 255,
+                        translationX,
+                    });
+                }
             }
             if (hasFollowingPage ||
                 (page > 0 &&
@@ -1128,6 +1174,7 @@ var BaseAppView = GObject.registerClass({
                 onComplete: () => {
                     this._teardownPagePreview(1);
                     this._syncClip();
+                    this._nextPageArrow.visible = false;
                     this._nextPageIndicator.visible = false;
                     this._updateFadeForNavigation();
                 },
@@ -1150,6 +1197,7 @@ var BaseAppView = GObject.registerClass({
                 onComplete: () => {
                     this._teardownPagePreview(-1);
                     this._syncClip();
+                    this._prevPageArrow.visible = false;
                     this._prevPageIndicator.visible = false;
                     this._updateFadeForNavigation();
                 },

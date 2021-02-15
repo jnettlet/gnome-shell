@@ -304,7 +304,8 @@ function _initializeUI() {
             notify(_('Logged in as a privileged user'),
                    _('Running a session as a privileged user should be avoided for security reasons. If possible, you should log in as a normal user.'));
         } else if (sessionMode.currentMode !== 'gdm' &&
-                   sessionMode.currentMode !== 'initial-setup') {
+                   sessionMode.currentMode !== 'initial-setup' &&
+                   GLib.get_user_name() !== 'liveuser') {
             _handleShowWelcomeScreen();
         }
 

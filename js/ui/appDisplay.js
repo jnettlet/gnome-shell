@@ -174,7 +174,20 @@ var BaseAppView = GObject.registerClass({
         this._adjustment = scroll.adjustment;
         this._adjustment.connect('notify::value', adj => {
             this._updateFade();
-            this._pageIndicators.setCurrentPosition(adj.value / adj.page_size);
+            const value = adj.value / adj.page_size;
+            this._pageIndicators.setCurrentPosition(value);
+            const distanceToPage = Math.abs(Math.round(value) - value);
+            if (distanceToPage < 0.01) {
+                this._hintContainer.ease({
+                    opacity: 255,
+                    duration: PAGE_PREVIEW_ANIMATION_TIME,
+                });
+            } else {
+                this._hintContainer.remove_transition('opacity');
+                this._hintContainer.opacity = Math.clamp(
+                    255 * (1 - distanceToPage * 2),
+                    0, this._hintContainer.opacity);
+            }
         });
 
         // Page Indicators
@@ -238,13 +251,20 @@ var BaseAppView = GObject.registerClass({
             x_align: Clutter.ActorAlign.START,
         });
 
+        this._hintContainer = new St.Widget({
+            layout_manager: new Clutter.BinLayout(),
+            x_expand: true,
+            y_expand: true,
+        });
+        this._hintContainer.add_child(this._prevPageIndicator);
+        this._hintContainer.add_child(this._nextPageIndicator);
+
         const scrollContainer = new St.Widget({
             layout_manager: new Clutter.BinLayout(),
             clip_to_allocation: true,
             y_expand: true,
         });
-        scrollContainer.add_child(this._prevPageIndicator);
-        scrollContainer.add_child(this._nextPageIndicator);
+        scrollContainer.add_child(this._hintContainer);
         scrollContainer.add_child(this._scrollView);
         scrollContainer.add_child(this._nextPageArrow);
         scrollContainer.add_child(this._prevPageArrow);
